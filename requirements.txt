@@ -1,4 +1,4 @@
-requests==2.30.0
+requests==2.34.2
 pytest
 packaging==21.3
 Markdown==3.3.7
