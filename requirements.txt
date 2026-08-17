@@ -2,5 +2,5 @@ requests==2.34.2
 pytest
 packaging==21.3
 Markdown==3.3.7
-six==1.16.0
+six==1.17.0
 itsdangerous==1.1.0
