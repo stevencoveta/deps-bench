@@ -4,3 +4,4 @@ packaging==26.3
 Markdown==3.10.3
 six==1.17.0
 itsdangerous==2.2.0
+werkzeug==2.2.3
