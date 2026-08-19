@@ -1,5 +1,4 @@
-from pydantic import BaseModel, root_validator, validator
-from pydantic.error_wrappers import ValidationError
+from pydantic import BaseModel, ValidationError, field_validator, model_validator
 
 
 class RunBudget(BaseModel):
@@ -7,17 +6,18 @@ class RunBudget(BaseModel):
     reserve_usd: float = 1.0
     concurrency: int = 1
 
-    @validator("balance_usd")
+    @field_validator("balance_usd")
+    @classmethod
     def balance_not_negative(cls, value):
         if value < 0:
             raise ValueError("balance cannot be negative")
         return value
 
-    @root_validator
-    def reserve_fits_balance(cls, values):
-        if values.get("reserve_usd", 0.0) * values.get("concurrency", 1) > values.get("balance_usd", 0.0):
+    @model_validator(mode="after")
+    def reserve_fits_balance(self):
+        if self.reserve_usd * self.concurrency > self.balance_usd:
             raise ValueError("reserve exceeds balance")
-        return values
+        return self
 
 
 def parse_budget(payload: dict) -> RunBudget:
@@ -28,5 +28,12 @@ def budget_problem(payload: dict) -> str | None:
     try:
         RunBudget(**payload)
     except ValidationError as exc:
-        return str(exc.errors()[0]["msg"])
+        error = exc.errors()[0]
+        # In pydantic v2, messages of errors raised from validators are
+        # prefixed with "Value error, "; the original exception message is
+        # kept in the error context. Unwrap it to keep the v1 behaviour.
+        cause = error.get("ctx", {}).get("error")
+        if isinstance(cause, ValueError):
+            return str(cause)
+        return str(error["msg"])
     return None
